@@ -10,11 +10,13 @@ Este proyecto implementa un validador de TOTP (Time-based One-Time Password) en 
 ## Estructura del proyecto
 
 ```
-TotpValidator/
-├── Program.cs          # Aplicación de consola principal
-├── TotpValidator.cs    # Clase validadora TOTP
-├── TotpValidator.csproj # Archivo de proyecto
-└── README.md          # Este archivo
+totp-net-example/
+├── README.md           # Este archivo
+├── .gitignore          # Archivos ignorados por Git
+└── TotpValidator/      # Proyecto .NET
+    ├── Program.cs          # Aplicación de consola principal
+    ├── TotpValidator.cs    # Clase validadora TOTP
+    └── TotpValidator.csproj # Archivo de proyecto
 ```
 
 ## Instalación y ejecución
@@ -22,7 +24,7 @@ TotpValidator/
 ### 1. Clonar o descargar el proyecto
 
 ```bash
-# Si tienes el código fuente
+git clone https://github.com/ticketplushq/totp-net-example.git
 cd totp-net-example
 ```
 
@@ -86,25 +88,39 @@ Ingrese el PIN de 6 dígitos: 898386
 Ingrese el secreto hexadecimal (o 'exit' para salir): exit
 ```
 
-### Ejemplo con diagnóstico automático
+### Ejemplo con diagnóstico automático mejorado
 
-Cuando un PIN es inválido, la aplicación muestra información de diagnóstico automáticamente:
+Cuando un PIN es inválido, la aplicación muestra información de diagnóstico detallada automáticamente:
 
 ```
 Ingrese el PIN de 6 dígitos: 000000
 ✗ PIN INVÁLIDO - Autenticación fallida
 
 --- INFORMACIÓN DE DIAGNÓSTICO ---
-[DEBUG] Secreto hex: 700600dad2d0b8268b5329925e6105be
-[DEBUG] Secreto bytes: 700600DAD2D0B8268B5329925E6105BE
+[DEBUG] ═══ INFORMACIÓN DE ENCODING ═══
+[DEBUG] Secreto original: 700600dad2d0b8268b5329925e6105be
+[DEBUG] Encoding utilizado: ASCII
+[DEBUG] Longitud secreto: 32 caracteres
+[DEBUG] Secreto como bytes: 37303036303064616432643062383236386235333239393235653631303562650
+[DEBUG] Bytes length: 32 bytes
+
+[DEBUG] ═══ VALIDACIÓN ACTUAL ═══
 [DEBUG] PIN ingresado: 000000
 [DEBUG] Código actual del sistema: 729672
 [DEBUG] Tiempo Unix actual: 1756241365
 [DEBUG] Time step actual: 58541410
+[DEBUG] ¿Coincide exacto?: false
 [DEBUG] Validación sin ventana: False, TimeStep matched: 0
 [DEBUG] Validación con ventana RFC: False, TimeStep matched: 0
+
+[DEBUG] ═══ PRUEBA CON OTROS ENCODINGS ═══
+[DEBUG] HEX: 898386 ← MATCH! (16 bytes)
+[DEBUG] BASE32: ERROR - Formato incompatible
+[DEBUG] UTF8: 456789 (32 bytes)
 --- FIN DIAGNÓSTICO ---
 ```
+
+**En este ejemplo**, el diagnóstico detecta que el PIN `000000` no es válido con encoding ASCII, pero **sí es válido con encoding HEX**, mostrando `← MATCH!` y sugiriendo el encoding correcto.
 
 ## Configuración TOTP
 
@@ -152,9 +168,11 @@ Contiene la clase `TotpValidator` con:
   - `pin`: El código TOTP de 6 dígitos a validar
   - `encoding`: El formato del secreto (ASCII, HEX, BASE32, UTF8)
   
-- **`DiagnosticInfo(string hexSecret, string pin)`**: Método de diagnóstico que se ejecuta automáticamente cuando falla la validación
-  - Muestra información detallada sobre el proceso de validación
+- **`DiagnosticInfo(string secret, string pin, string encoding = "ASCII")`**: Método de diagnóstico que se ejecuta automáticamente cuando falla la validación
+  - Muestra información detallada sobre el encoding utilizado
+  - Prueba automáticamente con otros encodings y detecta coincidencias
   - Incluye códigos TOTP actuales, time steps y validaciones con ventana
+  - **Detecta el encoding correcto**: Marca con `← MATCH!` si encuentra coincidencia con otro encoding
   
 - **`HexStringToByteArray(string hex)`**: Método auxiliar para compatibilidad con versiones anteriores de .NET Framework
 
@@ -176,7 +194,7 @@ Este validador es compatible con otras implementaciones TOTP que usen los mismos
 ### Configuración estándar TOTP
 
 ```csharp
-validator.ValidateTotp("700600dad2d0b8268b5329925e6105be", pin, "HEX");
+validator.ValidateTotp("700600dad2d0b8268b5329925e6105be", pin, "ASCII");
 ```
 
 ### Parámetros estándar
